@@ -4,71 +4,88 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
 
+class CSVParser():
 
-def parse_time(raw_time):
-    try:
-    
-        # Define the format without the year
-        date_format = "%m-%d %H:%M"
-    
-        # Parse the cleaned string into a datetime object
-        parsed_datetime = datetime.strptime(raw_time, date_format)
+    def __init__(
+        self, folderpath: str = '../../resources/'
+    ):
+        self.folderpath = folderpath
 
-        # Add placeholder year 2024.
+    def parse_time(self,raw_time):
+        try:
+            # Define the format without the year
+            date_format = "%m-%d %H:%M"
+        
+            # Parse the cleaned string into a datetime object
+            parsed_datetime = datetime.strptime(raw_time, date_format)
 
-        return parsed_datetime.replace(year = 2024)
-    
-    except ValueError:
-        return None
+            # Add placeholder year 2024.
 
-def retrieve_ais(path):
-    df_ais = pd.read_csv(path, sep='|')
-    df_ais['time'] = pd.to_datetime(df_ais['time'])
-    df_ais['etaParsed'] = df_ais['etaRaw'].apply(parse_time)
-    df_ais=df_ais.drop(['etaRaw'], axis = 1)
-    return df_ais
+            return parsed_datetime.replace(year = 2024)
+        
+        except ValueError:
+            return None
 
-def retrieve_ports(path):
-    df_ports = pd.read_csv(path, sep='|')
-    df_ports['portLongitude'] = df_ports['longitude']
-    df_ports['portLatitude'] = df_ports['latitude']
-    df_ports=df_ports.drop(['name', 'portLocation', 'countryName', 'longitude', 'latitude'], axis = 1)
-    return df_ports
+    def retrieve_ais(self,path):
+        df_ais = pd.read_csv(path, sep='|')
+        df_ais['time'] = pd.to_datetime(df_ais['time'])
+        df_ais['etaParsed'] = df_ais['etaRaw'].apply(self.parse_time)
+        df_ais=df_ais.drop(['etaRaw'], axis = 1)
+        return df_ais
 
-def retrieve_schedules(path):
-    df_schedules = pd.read_csv(path, sep='|')
-    df_schedules['sailingDate'] = pd.to_datetime(df_schedules['sailingDate'])
-    df_schedules['arrivalDate'] = pd.to_datetime(df_schedules['arrivalDate'])
+    def retrieve_ports(self,path):
+        df_ports = pd.read_csv(path, sep='|')
+        df_ports['portLongitude'] = df_ports['longitude']
+        df_ports['portLatitude'] = df_ports['latitude']
+        df_ports=df_ports.drop(['name', 'portLocation', 'countryName', 'longitude', 'latitude'], axis = 1)
+        return df_ports
 
-    df_schedules=df_schedules.drop(['shippingLineName', 'portName', 'portLongitude', 'portLatitude'], axis = 1)
-    print(df_schedules.head())
-    return df_schedules
+    def retrieve_schedules(self,path):
+        df_schedules = pd.read_csv(path, sep='|')
+        df_schedules['sailingDate'] = pd.to_datetime(df_schedules['sailingDate'])
+        df_schedules['arrivalDate'] = pd.to_datetime(df_schedules['arrivalDate'])
 
-def retrieve_vessels(path):
-    df_vessels = pd.read_csv(path, sep='|')
-    return df_vessels
+        df_schedules=df_schedules.drop(['shippingLineName', 'portName', 'portLongitude', 'portLatitude'], axis = 1)
+        print(df_schedules.head())
+        return df_schedules
 
-def retrieve_tests(path):
-    df_tests = pd.read_csv(path, sep='|')
-    df_tests['time'] = pd.to_datetime(df_tests['time'])
-    return df_tests
+    def retrieve_vessels(self,path):
+        df_vessels = pd.read_csv(path, sep='|')
+        return df_vessels
 
-def retrieve_all_data():
-    folderpath = 'resources/'
-    df_ais=retrieve_ais(folderpath+'ais_train.csv')
-    df_ports=retrieve_ports(folderpath+'ports.csv')
-    df_schedules=retrieve_schedules(folderpath+'schedules_to_may_2024.csv')
-    df_vessels=retrieve_vessels(folderpath+'vessels.csv')
-    df_tests=retrieve_tests(folderpath+'ais_test.csv')
+    def retrieve_tests(self,path):
+        df_tests = pd.read_csv(path, sep=',')
+        print(df_tests.head())
+        df_tests["time"] = pd.to_datetime(df_tests["time"])
+        return df_tests
 
-    
-    result = pd.merge(df_ais, df_ports, on='portId')
-    result = pd.merge(result, df_vessels, on='vessel_id')
-    result = pd.merge(result, df_schedules, on='portId')
-    result = result.drop(['portId'], axis = 1)
-    print(result.head())
+    def retrieve_training_data(self):
+        df_ais=self.retrieve_ais(self.folderpath+'ais_train.csv')
+        #df_ports=self.retrieve_ports(folderpath+'ports.csv')
+        #df_schedules=self.retrieve_schedules(folderpath+'schedules_to_may_2024.csv')
+        #df_vessels=self.retrieve_vessels(folderpath+'vessels.csv')
+        
+
+        result = df_ais
+        #result = pd.merge(df_ais, df_ports, on='portId')
+        #result = pd.merge(result, df_vessels, on='vesselId')
+        #result = pd.merge(result, df_schedules, on='portId')
+        #result = result.drop(['portId'], axis = 1)
+        
+
+        return result
+
+    def retrieve_test_data(self):
+        df_ais=self.retrieve_ais(self.folderpath+'ais_test.csv')
+        
+
+        result = df_ais
+        
+
+        return result
 
 
 if __name__ == '__main__':
-    retrieve_all_data()
+    parser = CSVParser()
+    parser.retrieve_training_data()
     
