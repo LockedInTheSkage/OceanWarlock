@@ -7,7 +7,7 @@ from datetime import datetime
 class CSVParser():
 
     def __init__(
-        self, folderpath: str = '../../resources/'
+        self, folderpath: str = '../../Project materials(1)/'
     ):
         self.folderpath = folderpath
 
