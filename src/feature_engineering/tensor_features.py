@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from loadBar import load_bar
 
 def develop_features(x: dict, y:dict):
     """
@@ -17,32 +18,34 @@ def develop_features(x: dict, y:dict):
     array_x = []
     array_y = []
     bo=True
-    for key in x.keys():
+    for i, key in enumerate(x.keys()):
+        load_bar(len(x.keys()), i)
         # Extract the first dataframe (time series data) and second dataframe (spatial details)
         df_timeseries = x[key][0].copy()
         df_details = pd.DataFrame(x[key][1].copy())
         df_y= y[key]
 
-
+        
         # Preprocessing on the first dataframe
         # Drop unwanted columns 'vesselId' and 'portId'
         df_details = df_details.drop(['vesselId', 'portId'])
-
-        
-
+        df_details = df_details.map(floating_conv)
         # Convert the dataframe to a one-dimensional feature vector
-        feature_vector = df_details.to_numpy().flatten()
-
+        feature_vector = df_details.to_numpy().flatten().tolist()
+        
+        feature_vector = np.array(feature_vector)
         # Extract the first WINDOW_SIZE rows from the second dataframe (df_details)
-        if len(df_timeseries) < WINDOW_SIZE:
-            df_timeseries_window = df_timeseries
-        else:
-            df_timeseries_window = df_timeseries.head(WINDOW_SIZE)
 
         # Convert the details dataframe into a flat array and concatenate with the first dataframe's feature vector
-        timeseries_vector = df_timeseries_window.to_numpy().flatten()
-        if len(timeseries_vector) < WINDOW_SIZE * len(df_timeseries.columns):
-            timeseries_vector = np.concatenate([timeseries_vector, np.zeros(WINDOW_SIZE * len(df_timeseries.columns) - len(timeseries_vector))])
+        df_timeseries = df_timeseries.map(floating_conv)
+        timeseries_vector = df_timeseries.to_numpy().flatten().tolist()
+        column_n = len(df_timeseries.columns.tolist())
+        timestamps=timeseries_vector[::column_n]
+        
+        
+
+        timeseries_vector = np.array(timeseries_vector)
+
         combined_features = np.concatenate([feature_vector, timeseries_vector])
         # Append the combined features to array_x
         array_x.append(combined_features)
@@ -54,9 +57,10 @@ def develop_features(x: dict, y:dict):
     array_x = np.array(array_x)
     array_y = np.array(array_y)
 
+    print("[====================] 100% complete")
     return array_x, array_y
 
-def convert_timestamp_to_seconds(timestamp):
+def floating_conv(timestamp):
     """
     Input:
     timestamp: A pandas Timestamp object
@@ -64,6 +68,8 @@ def convert_timestamp_to_seconds(timestamp):
     Output:
     seconds: The number of seconds since the (January 1, 2023)
     """
-    if isinstance(timestamp, pd.Timestamp):
+    if not (isinstance(timestamp, pd.Timestamp) or isinstance(timestamp, float) or isinstance(timestamp, int)):
+        return -1.0
+    elif isinstance(timestamp, pd.Timestamp):
         return float((timestamp - pd.Timestamp('2023-01-01')).total_seconds())
     return float(timestamp)

@@ -1,4 +1,7 @@
 import pandas as pd
+from loadBar import load_bar
+import time
+
 time_series_columns=['time', 'latitude', 'longitude']
 
 def path_finder(df, id, eta):
@@ -18,24 +21,46 @@ def path_finder(df, id, eta):
 def path_sorter(df):
     """
     Input:
-    df: DataFrame object with columns ['vesselId', 'eta', 'time', 'latitude', 'longitude']
+    df: DataFrame object 
 
     Output:
-    A dictionary where each key is a tuple ('vesselId', 'eta'), and the value is a list of sorted entries (based on 'time') for that combination.
+    A dictionary where each key is a tuple ('vesselId', 'time'), and the value is a list of sorted entries (based on 'time') for that combination.
     """
     bucket_dict = {}
-
+    WINDOW_SIZE = 10
+    
+    
     grouped = df.groupby(['vesselId'])
-    bo=True
+    bo=60
+    i=0
+    timedif=0
     for group_id, group_df in grouped:
+        load_bar(len(grouped), i+1)
+        i+=1
+
         sorted_group = group_df.sort_values(by='time', ascending=False)
+        for cursor in range(len(group_df)//WINDOW_SIZE+1):
+            if(cursor*WINDOW_SIZE==len(group_df)):
+                break
+            window=sorted_group.loc[sorted_group.index[cursor*WINDOW_SIZE]:sorted_group.index[min((1+cursor)*WINDOW_SIZE,len(sorted_group)-1)-1]]
+            
 
-        filtered_columns = df.columns[~df.columns.isin(time_series_columns)].tolist()
+            filtered_columns = df.columns[~df.columns.isin(time_series_columns)].tolist()
 
-        details = df[filtered_columns].loc[df.index[1]]
+            
+            if len(window) < WINDOW_SIZE:
+                padding = pd.DataFrame(-1, index=range(WINDOW_SIZE - len(window)), columns=df.columns)
+                window= pd.concat([window, padding], ignore_index=True)
 
-        bucketvalues=sorted_group[time_series_columns]
-        bucket_dict[group_id] = [bucketvalues, details]
+     
+            details = window[filtered_columns].loc[window.index[1]]
+            time_key=window['time'].loc[window.index[0]]
+
+
+            bucketvalues=window[time_series_columns]
+            bucket_dict[(group_id,time_key)] = [bucketvalues, details]
+
+            
             
     
     return bucket_dict
