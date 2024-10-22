@@ -2,7 +2,7 @@ import pandas as pd
 from loadBar import load_bar
 import time
 
-time_series_columns=['time', 'latitude', 'longitude']
+time_series_columns=['time', 'cog', 'sog', 'latitude', 'longitude']
 
 def path_finder(df, id, eta):
     """
@@ -26,12 +26,11 @@ def path_sorter(df):
     Output:
     A dictionary where each key is a tuple ('vesselId', 'time'), and the value is a list of sorted entries (based on 'time') for that combination.
     """
-    bucket_dict = {}
+    bucket_list = []
     WINDOW_SIZE = 10
     
     
     grouped = df.groupby(['vesselId'])
-    bo=60
     i=0
     timedif=0
     for group_id, group_df in grouped:
@@ -42,25 +41,30 @@ def path_sorter(df):
         for cursor in range(len(group_df)//WINDOW_SIZE+1):
             if(cursor*WINDOW_SIZE==len(group_df)):
                 break
-            window=sorted_group.loc[sorted_group.index[cursor*WINDOW_SIZE]:sorted_group.index[min((1+cursor)*WINDOW_SIZE,len(sorted_group)-1)-1]]
-            
+
+            window = sorted_group.loc[sorted_group.index[cursor * WINDOW_SIZE]:sorted_group.index[min((1 + cursor) * WINDOW_SIZE, len(sorted_group) - 1) - 1]]
 
             filtered_columns = df.columns[~df.columns.isin(time_series_columns)].tolist()
 
-            
             if len(window) < WINDOW_SIZE:
                 padding = pd.DataFrame(-1, index=range(WINDOW_SIZE - len(window)), columns=df.columns)
-                window= pd.concat([window, padding], ignore_index=True)
+                window = pd.concat([window, padding], ignore_index=True)
 
-     
             details = window[filtered_columns].loc[window.index[1]]
-            time_key=window['time'].loc[window.index[0]]
+            bucketvalues = window[time_series_columns] 
 
+            details_df = pd.DataFrame([details]).reset_index(drop=True)
 
-            bucketvalues=window[time_series_columns]
-            bucket_dict[(group_id,time_key)] = [bucketvalues, details]
+            flattened_bucketvalues = bucketvalues.values.flatten()
 
-            
-            
+            bucket_columns = [f'{time_series_columns[i%len(time_series_columns)]}_{i//len(time_series_columns)}' for i in range(len(flattened_bucketvalues))]
+            bucketvalues_df = pd.DataFrame([flattened_bucketvalues], columns=bucket_columns)
+            final_df = pd.concat([details_df, bucketvalues_df], axis=1)
+            bucket_list.append(final_df)
+
+    print("")
+    print("Concatting dataframes")
+    print(f"Number of dataframes: {len(bucket_list)}")
+    combined_df = pd.concat(bucket_list, ignore_index=True)
     
-    return bucket_dict
+    return combined_df

@@ -7,7 +7,7 @@ from datetime import datetime
 class CSVParser():
 
     def __init__(
-        self, folderpath: str = '../../Project materials(1)/'
+        self, folderpath: str = '../../Project materials(1)'
     ):
         self.folderpath = folderpath
 
@@ -60,7 +60,7 @@ class CSVParser():
         return df_tests
 
     def retrieve_training_data(self):
-        df_ais=self.retrieve_ais(self.folderpath+'ais_train.csv')
+        df_ais=self.retrieve_ais(self.folderpath+'/ais_train.csv')
         #df_ports=self.retrieve_ports(folderpath+'ports.csv')
         #df_schedules=self.retrieve_schedules(folderpath+'schedules_to_may_2024.csv')
         #df_vessels=self.retrieve_vessels(folderpath+'vessels.csv')
@@ -76,7 +76,7 @@ class CSVParser():
         return result
 
     def retrieve_test_data(self):
-        df_ais=self.retrieve_ais(self.folderpath+'ais_test.csv')
+        df_ais=self.retrieve_ais(self.folderpath+'/ais_test.csv')
         
 
         result = df_ais

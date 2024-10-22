@@ -1,64 +1,32 @@
 import pandas as pd
 import numpy as np
 from loadBar import load_bar
+from datetime import datetime
 
-def develop_features(x: dict, y:dict):
-    """
-    Input:
-    x: A dictionary with keys as vesselId and values as a list of two dataframes. 
-       The first dataframe contains the time series data, and the second dataframe contains the details.
-    y: A dictionary with keys as vesselId and values as a dataframe with the target variable
+def develop_features(df):
     
-    Output:
-    array_x: A numpy array with features developed from the input dataframes.
-    array_y: A numpy array with the target values.
-    """
-    WINDOW_SIZE = 10
+    columns_to_drop = ['vesselId', 'portId', 'group_id', 'time_key']
+    df = df.drop(columns=[col for col in columns_to_drop if col in df.columns])
+    print("Developing features with the following columns: ", df.columns)
 
-    array_x = []
-    array_y = []
-    bo=True
-    for i, key in enumerate(x.keys()):
-        load_bar(len(x.keys()), i)
-        # Extract the first dataframe (time series data) and second dataframe (spatial details)
-        df_timeseries = x[key][0].copy()
-        df_details = pd.DataFrame(x[key][1].copy())
-        df_y= y[key]
+    time_columns = [col for col in df.columns if col.startswith('time_')]
+    time_columns.append('etaParsed')
 
-        
-        # Preprocessing on the first dataframe
-        # Drop unwanted columns 'vesselId' and 'portId'
-        df_details = df_details.drop(['vesselId', 'portId'])
-        df_details = df_details.map(floating_conv)
-        # Convert the dataframe to a one-dimensional feature vector
-        feature_vector = df_details.to_numpy().flatten().tolist()
-        
-        feature_vector = np.array(feature_vector)
-        # Extract the first WINDOW_SIZE rows from the second dataframe (df_details)
+    # Apply normalization to all time columns
+    for time_col in time_columns:
+        df[time_col] = df[time_col].apply(normalize_time_to_seconds)
+    
+    return df
 
-        # Convert the details dataframe into a flat array and concatenate with the first dataframe's feature vector
-        df_timeseries = df_timeseries.map(floating_conv)
-        timeseries_vector = df_timeseries.to_numpy().flatten().tolist()
-        column_n = len(df_timeseries.columns.tolist())
-        timestamps=timeseries_vector[::column_n]
-        
-        
-
-        timeseries_vector = np.array(timeseries_vector)
-
-        combined_features = np.concatenate([feature_vector, timeseries_vector])
-        # Append the combined features to array_x
-        array_x.append(combined_features)
-
-        # Append the target to array_y
-        array_y.append(df_y[['latitude', 'longitude']].to_numpy().flatten())
-
-    # Convert lists to numpy arrays for easier handling in tensors
-    array_x = np.array(array_x)
-    array_y = np.array(array_y)
-
-    print("[====================] 100% complete")
-    return array_x, array_y
+def normalize_time_to_seconds(time_str):
+    base_date = datetime(2023, 1, 1)
+    #last_date = datetime(2025, 12, 31)
+    if pd.isna(time_str):  # Handle missing values
+        return np.nan
+    time_obj = pd.to_datetime(time_str)  # Convert to datetime object
+    seconds_since_base = (time_obj - base_date).total_seconds()  # Seconds since base_date
+    # max_seconds_range = (last_date - base_date).total_seconds()  # Range from base_date to last_date
+    return seconds_since_base # / max_seconds_range  # Normalize to range 0 to 1
 
 def floating_conv(timestamp):
     """
