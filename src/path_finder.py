@@ -3,6 +3,7 @@ from loadBar import load_bar
 import time
 
 time_series_columns=['time', 'cog', 'sog', 'latitude', 'longitude']
+WINDOW_SIZE = 10
 
 def path_finder(df, id, eta):
     """
@@ -27,7 +28,6 @@ def path_sorter(df):
     A dictionary where each key is a tuple ('vesselId', 'time'), and the value is a list of sorted entries (based on 'time') for that combination.
     """
     bucket_list = []
-    WINDOW_SIZE = 10
     
     
     grouped = df.groupby(['vesselId'])
@@ -68,3 +68,58 @@ def path_sorter(df):
     combined_df = pd.concat(bucket_list, ignore_index=True)
     
     return combined_df
+
+def test_path_sorter(df, test_id_df):
+    """
+    Input:
+    df: DataFrame object 
+
+    Output:
+    A dictionary where each key is a tuple ('vesselId', 'time'), and the value is a list of sorted entries (based on 'time') for that combination.
+    """
+    bucket_list = []
+    
+    
+    vessels=test_id_df['vesselId']
+    
+    grouped = df.groupby(['vesselId'])
+    i=0
+    for group_id, group_df in grouped:
+        load_bar(len(grouped), i+1)
+        i+=1
+        if group_id not in vessels:
+            continue
+
+        sorted_group = group_df.sort_values(by='time', ascending=False)
+
+        window = sorted_group.loc[sorted_group.index[0]:sorted_group.index[min((WINDOW_SIZE-1), len(sorted_group) - 1) - 1]]
+
+        filtered_columns = df.columns[~df.columns.isin(time_series_columns)].tolist()
+
+        if len(window) < WINDOW_SIZE:
+            padding = pd.DataFrame(-1, index=range(WINDOW_SIZE-1 - len(window)), columns=df.columns)
+            window = pd.concat([window, padding], ignore_index=True)
+
+        details = window[filtered_columns].loc[window.index[1]]
+        bucketvalues = window[time_series_columns] 
+
+        details_df = pd.DataFrame([details]).reset_index(drop=True)
+
+        flattened_bucketvalues = bucketvalues.values.flatten()
+
+        bucket_columns = [f'{time_series_columns[i%len(time_series_columns)+1]}_{i//len(time_series_columns)+1}' for i in range(len(flattened_bucketvalues))]
+        bucketvalues_df = pd.DataFrame([flattened_bucketvalues], columns=bucket_columns)
+        final_df = pd.concat([details_df, bucketvalues_df], axis=1)
+        print(test_id_df.query(f'vesselId == {group_id}'))
+        for time in test_id_df.query(f'vesselId == {group_id}')["time"]:
+            resulting_df = final_df.copy()
+            resulting_df['time_0'] = time
+            bucket_list.append(resulting_df)
+    
+    print("")
+    print("Concatting dataframes")
+    print(f"Number of dataframes: {len(bucket_list)}")
+    combined_df = pd.concat(bucket_list, ignore_index=True)
+    
+    return combined_df
+

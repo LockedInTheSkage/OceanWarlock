@@ -49,4 +49,14 @@ class LocalToLargeDataLoader():
             y[key] = input_dict[key][0].iloc[0:1][['latitude', 'longitude']]
         return x, y
 
+    def load_test_data(self, path=None):
+        if path:
+            parser = CSVParser(path)
+        else:
+            parser = CSVParser()
+        if self.print_progress:
+            print("Retrieving testing data...")
+        parsed_data = parser.retrieve_test_data()
+        return parsed_data
+
     

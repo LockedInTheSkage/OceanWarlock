@@ -2,20 +2,31 @@ import pandas as pd
 import numpy as np
 from loadBar import load_bar
 from datetime import datetime
+from tensorflow.keras.preprocessing.text import Tokenizer
+from sklearn.preprocessing import LabelEncoder
 
 def develop_features(df):
     
     columns_to_drop = ['vesselId', 'portId', 'group_id', 'time_key']
+    columns_to_tokenize = ['UN_LOCODE']
+    columns_to_categorize = ['ISO']
+
+
     df = df.drop(columns=[col for col in columns_to_drop if col in df.columns])
     print("Developing features with the following columns: ", df.columns)
-
+    
     time_columns = [col for col in df.columns if col.startswith('time_')]
     time_columns.append('etaParsed')
 
-    # Apply normalization to all time columns
+    df = tokenize_columns(df, columns_to_tokenize)
+    df = categorize_columns(df, columns_to_categorize)
+    df = normalize_time(df, time_columns)  
+    
+    return df
+
+def normalize_time(df, time_columns):
     for time_col in time_columns:
         df[time_col] = df[time_col].apply(normalize_time_to_seconds)
-    
     return df
 
 def normalize_time_to_seconds(time_str):
@@ -41,3 +52,19 @@ def floating_conv(timestamp):
     elif isinstance(timestamp, pd.Timestamp):
         return float((timestamp - pd.Timestamp('2023-01-01')).total_seconds())
     return float(timestamp)
+
+def tokenize_columns(df, columns):
+    tokenizer = Tokenizer()
+    for col in columns:
+        if not col in df.columns: 
+            continue
+        tokenizer.fit_on_texts(df[col]) 
+        df[col] = tokenizer.texts_to_sequences(df[col])
+    return df
+
+def categorize_columns(df, columns):
+    for col in columns:
+        if not col in df.columns: 
+            continue
+        df[col], _ = pd.factorize(df[col])
+    return df
