@@ -2,14 +2,16 @@ import pandas as pd
 import numpy as np
 from loadBar import load_bar
 from datetime import datetime
-from tensorflow.keras.preprocessing.text import Tokenizer
+import tensorflow as tf
 from sklearn.preprocessing import LabelEncoder
 
-def develop_features(df):
+lat_time_dif=10**5
+
+def develop_features(df, derivative_locations=False):
     
     columns_to_drop = ['vesselId', 'portId', 'group_id', 'time_key']
-    columns_to_tokenize = ['UN_LOCODE']
-    columns_to_categorize = ['ISO']
+    columns_to_tokenize = []
+    columns_to_categorize = ['ISO', 'UN_LOCODE']
 
 
     df = df.drop(columns=[col for col in columns_to_drop if col in df.columns])
@@ -18,19 +20,52 @@ def develop_features(df):
     time_columns = [col for col in df.columns if col.startswith('time_')]
     time_columns.append('etaParsed')
 
-    df = tokenize_columns(df, columns_to_tokenize)
-    df = categorize_columns(df, columns_to_categorize)
-    df = normalize_time(df, time_columns)  
     
-    return df
+    print("Categorizing...")
+    df = categorize_columns(df, columns_to_categorize)
+    print("Tokenizing...")
+    df = tokenize_columns(df, columns_to_tokenize)
+    print("Normalizing timestamps...")
+    df = normalize_time(df, time_columns) 
+
+    
+    if not derivative_locations:
+        return df
+    
+    print("Derivating locations...")
+
+    time_cols = [col for col in df.columns if col.startswith('time')]
+    latitude_cols = [col for col in df.columns if col.startswith('latitude')]
+    longitude_cols = [col for col in df.columns if col.startswith('longitude')]
+    time_cols.remove("time_0")
+    # Create a copy of the DataFrame to avoid modifying the original
+    df_transformed = df.copy()
+
+    # Loop over the range of time, latitude, and longitude columns
+    for i in range(1, len(time_cols)):
+        # Calculate time difference
+        time_diff = df[time_cols[i]] - df[time_cols[i-1]]
+        # Replace time column with the time difference
+        df_transformed[time_cols[i]] = time_diff.apply(float)
+
+        # Calculate latitude and longitude differences and normalize by time difference
+        lat_diff = df[latitude_cols[i]] - df[latitude_cols[i-1]]
+        long_diff = df[longitude_cols[i]] - df[longitude_cols[i-1]]
+        
+        # Replace with the differences divided by time difference (avoid division by zero)
+        df_transformed[latitude_cols[i]] = lat_time_dif*lat_diff / time_diff.replace(0.0, 10**24)  # Replace 0 with NA to avoid division by zero
+        df_transformed[longitude_cols[i]] = lat_time_dif*long_diff / time_diff.replace(0.0, 10**24)
+
+    return df_transformed
 
 def normalize_time(df, time_columns):
     for time_col in time_columns:
         df[time_col] = df[time_col].apply(normalize_time_to_seconds)
+    nomralize(df)
     return df
 
 def normalize_time_to_seconds(time_str):
-    base_date = datetime(2023, 1, 1)
+    base_date = datetime(2024, 1, 1)
     #last_date = datetime(2025, 12, 31)
     if pd.isna(time_str):  # Handle missing values
         return np.nan
@@ -45,21 +80,17 @@ def floating_conv(timestamp):
     timestamp: A pandas Timestamp object
     
     Output:
-    seconds: The number of seconds since the (January 1, 2023)
+    seconds: The number of seconds since the (January 1, 2024)
     """
     if not (isinstance(timestamp, pd.Timestamp) or isinstance(timestamp, float) or isinstance(timestamp, int)):
         return -1.0
     elif isinstance(timestamp, pd.Timestamp):
-        return float((timestamp - pd.Timestamp('2023-01-01')).total_seconds())
-    return float(timestamp)
+        return float((timestamp - pd.Timestamp('2024-01-01')).total_seconds())/3600
+    return float(timestamp)/3600
 
 def tokenize_columns(df, columns):
-    tokenizer = Tokenizer()
-    for col in columns:
-        if not col in df.columns: 
-            continue
-        tokenizer.fit_on_texts(df[col]) 
-        df[col] = tokenizer.texts_to_sequences(df[col])
+
+    df= pd.get_dummies(df, columns=columns, drop_first=True)
     return df
 
 def categorize_columns(df, columns):
@@ -68,3 +99,7 @@ def categorize_columns(df, columns):
             continue
         df[col], _ = pd.factorize(df[col])
     return df
+
+def nomralize(df):
+    
+    return (df - df.min()) / (df.max() - df.min())

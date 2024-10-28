@@ -78,21 +78,22 @@ def test_path_sorter(df, test_id_df):
     A dictionary where each key is a tuple ('vesselId', 'time'), and the value is a list of sorted entries (based on 'time') for that combination.
     """
     bucket_list = []
+    print("New")
     
+
     
-    vessels=test_id_df['vesselId']
-    
-    grouped = df.groupby(['vesselId'])
+    df_relevant = df[df['vesselId'].isin(test_id_df['vesselId'])]
+    grouped = df_relevant.groupby(['vesselId'])
     i=0
+
+
     for group_id, group_df in grouped:
         load_bar(len(grouped), i+1)
         i+=1
-        if group_id not in vessels:
-            continue
 
         sorted_group = group_df.sort_values(by='time', ascending=False)
 
-        window = sorted_group.loc[sorted_group.index[0]:sorted_group.index[min((WINDOW_SIZE-1), len(sorted_group) - 1) - 1]]
+        window = sorted_group.loc[sorted_group.index[0]:sorted_group.index[min((WINDOW_SIZE - 1), len(sorted_group) - 1) - 1]]
 
         filtered_columns = df.columns[~df.columns.isin(time_series_columns)].tolist()
 
@@ -107,19 +108,28 @@ def test_path_sorter(df, test_id_df):
 
         flattened_bucketvalues = bucketvalues.values.flatten()
 
-        bucket_columns = [f'{time_series_columns[i%len(time_series_columns)+1]}_{i//len(time_series_columns)+1}' for i in range(len(flattened_bucketvalues))]
+        bucket_columns = [f'{time_series_columns[i%len(time_series_columns)]}_{i//len(time_series_columns)+1}' for i in range(len(flattened_bucketvalues))]
         bucketvalues_df = pd.DataFrame([flattened_bucketvalues], columns=bucket_columns)
         final_df = pd.concat([details_df, bucketvalues_df], axis=1)
-        print(test_id_df.query(f'vesselId == {group_id}'))
-        for time in test_id_df.query(f'vesselId == {group_id}')["time"]:
-            resulting_df = final_df.copy()
-            resulting_df['time_0'] = time
-            bucket_list.append(resulting_df)
-    
+
+        query_df=test_id_df.query(f'vesselId == "{group_id[0]}"').drop(columns=['vesselId']).reset_index(drop=True)
+
+        result_df = pd.DataFrame()
+
+        if len(final_df) == 1:
+            repeated_final_df = pd.concat([final_df]*len(query_df), ignore_index=True)
+            
+            result_df = pd.concat([query_df.reset_index(drop=True), repeated_final_df], axis=1)
+        else:
+            print("Error: final_df should contain only one row.")
+        result_df['time_0']=result_df['time']
+        result_df=result_df.drop(columns=['time', 'scaling_factor'])
+        bucket_list.append(result_df)
     print("")
     print("Concatting dataframes")
     print(f"Number of dataframes: {len(bucket_list)}")
     combined_df = pd.concat(bucket_list, ignore_index=True)
-    
+    combined_df = combined_df.sort_values(by='ID')
+
     return combined_df
 
