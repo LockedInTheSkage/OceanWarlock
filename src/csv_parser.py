@@ -66,12 +66,12 @@ class CSVParser():
         df_ais=self.retrieve_ais(self.folderpath+'/ais_train.csv')
         df_ports=self.retrieve_ports(self.folderpath+'/ports.csv')
         # df_schedules=self.retrieve_schedules(self.folderpath+'/schedules_to_may_2024.csv')
-        df_vessels=self.retrieve_vessels(self.folderpath+'/vessels.csv')
+        # df_vessels=self.retrieve_vessels(self.folderpath+'/vessels.csv')
         
 
         result = df_ais
         result = pd.merge(df_ais, df_ports, on='portId')
-        result = pd.merge(result, df_vessels, on='vesselId')
+        # result = pd.merge(result, df_vessels, on='vesselId')
         # result = pd.merge(result, df_schedules, on='portId')
         # result = result.drop(['portId'], axis = 1)
         
