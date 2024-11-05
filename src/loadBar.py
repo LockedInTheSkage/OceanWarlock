@@ -1,6 +1,7 @@
 def load_bar(n, i):
     if n<=i:
-        print("[===================-] 100.0% complete")
+        print("[====================] 100.0% complete")
+        return
     progress = i / n
     bar_length = 20
     filled_length = int(progress * bar_length)
