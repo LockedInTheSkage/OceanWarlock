@@ -1,12 +1,14 @@
 import pandas as pd
 import numpy as np
 import loadBar
+from globals import RESOURCE_FOLDER, MARKOV_SIZE
 
 class MarkovSquares():
 
     def __init__(self, square_size):
         self.square_size = square_size
         self.normalized_markov_matrix = None
+        self.direction_columns = ["SW", "S", "SE", "W", "C", "E", "NW", "N", "NE"]
 
     def markovSquares(self, df, sorting_column):
         unique_sorts = df[sorting_column].unique()
@@ -41,34 +43,35 @@ class MarkovSquares():
             
         self.normalized_markov_matrix  = markov_matrix / np.sum(markov_matrix, axis=-1, keepdims=True)
 
-    def add_as_columns(self, df):
-        # Create lists to hold the new column data
-        column_names = ["SW", "S", "SE", "W", "C", "E", "NW", "N", "NE"]
-        precentage_lists = [[]]*9
+    def add_as_columns(self, df, lat_col="latitude", lon_col="longitude"):
+        # Define column names for the new data
+        column_names = self.direction_columns
         
-        # Iterate through each row and apply the `process_coordinates` function
-        for _, row in df.iterrows():
+        # Initialize a DataFrame to hold the results
+        results_df = pd.DataFrame(columns=column_names, index=df.index)
+        
+        print("Adding Markov Squares as columns")
+        i=0
+        for idx, row in df.iterrows():
+            i+=1
+            loadBar.load_bar(len(df),i)
             # Extract latitude and longitude values
-            latitude = row["latitude"]
-            longitude = row["longitude"]
+            latitude = row[lat_col]
+            longitude = row[lon_col]
             
-            # Check for NaN values and skip if necessary
+            # Check for NaN values in latitude and longitude
             if pd.notna(latitude) and pd.notna(longitude):
-                # Get the processed values
+                # Get the processed values (assumes `get_markov_square` returns a list of 9 values)
                 processed_values = self.get_markov_square(latitude, longitude)
-                
-                # Append the processed values to the respective lists
-                for i in range(9):
-                    precentage_lists[i].append(processed_values[i])
+                # Set the result in the corresponding row of results_df
+                results_df.loc[idx] = processed_values
             else:
-                # If latitude or longitude is NaN, append NaN for each new column
-                for i in range(9):
-                    precentage_lists[i].append(np.nan)
-        
-        # Add the new columns to the DataFrame
-        for i in range(9):
-            df[column_names[i]] = precentage_lists[i]
-        
+                # Set NaN for each new column if latitude or longitude is NaN
+                results_df.loc[idx] = [np.nan] * 9
+
+        # Concatenate results_df with the original df along the columns axis
+        df = pd.concat([df, results_df], axis=1)
+        df= df[column_names]
         return df
 
 
@@ -83,10 +86,12 @@ class MarkovSquares():
         index = lat_index * 3 + lon_index
         return index
     
+    
 
 def apply_markov(df):
     
-    markov = MarkovSquares(2)
-    markov.normalized_markov_matrix = np.load("../../resources/markov_matrix.npy")
-    df = markov.add_as_columns(df)
-    return df
+    markov = MarkovSquares(MARKOV_SIZE)
+    markov.normalized_markov_matrix = np.load(RESOURCE_FOLDER+"/markov_matrix.npy")
+    df_m = markov.add_as_columns(df, lat_col="latitude", lon_col="longitude")
+    df_m.name = markov.direction_columns
+    return df_m

@@ -1,6 +1,7 @@
 import pandas as pd
 
 
+
 class FeatureEngineer:
     def __init__(self, df: pd.DataFrame):
         self.df = df
@@ -19,15 +20,12 @@ class FeatureEngineer:
 
     def get_dataframe(self):
         return self.df
-
-# Example usage:
-def example_feature(df):
-    new_feature = df['existing_column'] * 2
-    new_feature.name = 'new_feature'
-    return new_feature
-
-df = pd.DataFrame({'existing_column': [1, 2, 3]})
-fe = FeatureEngineer(df)
-fe.add_feature(example_feature)
-new_df = fe.get_dataframe()
-print(new_df)
+    def apply_features(self, features):
+        """
+        Apply a list of functions to the dataframe to add new features.
+        
+        Parameters:
+        features (list): A list of functions that take a dataframe and return a series.
+        """
+        for func in features:
+            self.add_feature(func)
