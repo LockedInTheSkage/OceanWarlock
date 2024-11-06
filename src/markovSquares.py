@@ -83,4 +83,10 @@ class MarkovSquares():
         index = lat_index * 3 + lon_index
         return index
     
-            
+
+def apply_markov(df):
+    
+    markov = MarkovSquares(2)
+    markov.normalized_markov_matrix = np.load("../../resources/markov_matrix.npy")
+    df = markov.add_as_columns(df)
+    return df
