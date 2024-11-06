@@ -20,7 +20,7 @@ def fill_with_proximity(df):
         # Interpolate route points for each missing timestamp in the segment
         fill_missing_segment(df, route, start_idx, end_idx)
     
-    # df = df.ffill()
+    df = df.ffill()
     return df
 
 def find_missing_segments(df):
