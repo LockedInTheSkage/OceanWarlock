@@ -67,12 +67,12 @@ def numerize_ISO(total_df):
 def type_dummies(total_df):
     if "vesselType" not in total_df.columns:
         return None
-
-    dummies = pd.get_dummies(total_df["vesselType"], dummy_na=True, prefix='value')
-    return_values = pd.concat([total_df, dummies], axis = 1)
+    return_values = pd.get_dummies(total_df["vesselType"], dummy_na=True, prefix='value')
+    return_values = return_values["vesselType_dummies"]
+    return_values.name = "vesselType_dummies"
     return return_values
 
-def days_to_etaParsed(total_df):
+def minutes_to_etaParsed(total_df):
     if "etaParsed" not in total_df.columns or "time" not in total_df.columns:
         return None
     eta=total_df["etaParsed"]
