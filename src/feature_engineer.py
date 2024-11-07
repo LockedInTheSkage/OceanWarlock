@@ -16,10 +16,12 @@ class FeatureEngineer:
         **kwargs: Additional keyword arguments to pass to the function.
         """
         new_feature = func(self.df, *args, **kwargs)
-        self.df[new_feature.name] = new_feature
+        if new_feature is not None:
+            self.df[new_feature.name] = new_feature
 
     def get_dataframe(self):
         return self.df
+    
     def apply_features(self, features):
         """
         Apply a list of functions to the dataframe to add new features.

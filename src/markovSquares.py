@@ -89,6 +89,8 @@ class MarkovSquares():
     
 
 def apply_markov(df):
+    if "latitude" not in df.columns or "longitude" not in df.columns:
+        return None
     markov = MarkovSquares(MARKOV_SIZE)
     markov.normalized_markov_matrix = np.load(RESOURCE_FOLDER+"/markov_matrix.npy")
     df_m = markov.add_as_columns(df, lat_col="latitude", lon_col="longitude")

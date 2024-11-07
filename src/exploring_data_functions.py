@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 
 def categorize_navstat(toy_data):
+    if "navstat" not in toy_data.columns:
+        return None
     important_values = {0: "OMW_E", 1: "Anchor", 5: "Moored"}
 
     # Create a new column with categories
@@ -10,6 +12,8 @@ def categorize_navstat(toy_data):
     return return_value
 
 def categorize_rot(total_df):
+    if "rot" not in total_df.columns:
+        return None
     # Create a new column with categories
     rot_values = total_df["rot"]
 
@@ -28,6 +32,8 @@ def categorize_rot(total_df):
     return return_values
 
 def numerize_UN_LOCODE(total_df):
+    if "UN_LOCODE" not in total_df.columns:
+        return None
 
     #I want to turn the UN_LOCODE into a numerical value.
     #I will do this by taking a list of all the unique values and then assign a number to each of them.
@@ -42,6 +48,8 @@ def numerize_UN_LOCODE(total_df):
     return return_values
 
 def numerize_ISO(total_df):
+    if "ISO" not in total_df.columns:
+        return None
 
     #I want to turn the ISO into a numerical value.
     #I will do this by taking a list of all the unique values and then assign a number to each of them.
@@ -55,7 +63,17 @@ def numerize_ISO(total_df):
     return_values.name = "ISO_num"
     return return_values
 
+def type_dummies(total_df):
+    if "vesselType" not in total_df.columns:
+        return None
+
+    dummies = pd.get_dummies(total_df["vesselType"], dummy_na=True, prefix='value')
+    return_values = pd.concat([total_df, dummies], axis = 1)
+    return return_values
+
 def days_to_etaParsed(total_df):
+    if "etaParsed" not in total_df.columns or "time" not in total_df.columns:
+        return None
     eta=total_df["etaParsed"]
     time=total_df["time"]
     print(eta)
