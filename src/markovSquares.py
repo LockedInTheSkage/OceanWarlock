@@ -70,8 +70,11 @@ class MarkovSquares():
                 # Set NaN for each new column if latitude or longitude is NaN
                 results_df.loc[idx] = [np.nan] * 9
 
+
         # Concatenate results_df with the original df along the columns axis
         df = pd.concat([df, results_df], axis=1)
+        for col in column_names:
+            df[col]=df[col].apply(float)
         df= df[column_names]
         return df
 
