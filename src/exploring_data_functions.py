@@ -4,13 +4,12 @@ import pandas as pd
 def categorize_navstat(toy_data):
     if "navstat" not in toy_data.columns:
         return None
-    movement_values = [0, 3, 4, 8]
+    important_values = {0: "OMW_E", 1: "Anchor", 5: "Moored"}
 
     # Create a new column with categories
-    toy_data["navstat_cat"] = np.where(toy_data["navstat"].isin(movement_values), "moving","not_moving")
-    return_value = toy_data["navstat_cat"]
-    return_value.name = "navstat_cat"
-    return return_value
+    toy_data['navstat_cat'] = toy_data['navstat'].apply(lambda x: important_values.get(x, "Other"))
+    toy_data.name = "navstat_cat"
+    return toy_data
 
 def categorize_rot(total_df):
     if "rot" not in total_df.columns:
