@@ -43,18 +43,19 @@ class MarkovSquares():
             
         self.normalized_markov_matrix  = markov_matrix / np.sum(markov_matrix, axis=-1, keepdims=True)
 
-    def add_as_columns(self, df, lat_col="latitude", lon_col="longitude"):
+    def add_as_columns(self, df, lat_col="latitude", lon_col="longitude", verbose=False):
         # Define column names for the new data
         column_names = self.direction_columns
         
         # Initialize a DataFrame to hold the results
         results_df = pd.DataFrame(columns=column_names, index=df.index)
-        
-        print("Adding Markov Squares as columns")
+        if verbose:
+            print("Adding Markov Squares as columns")
         i=0
         for idx, row in df.iterrows():
             i+=1
-            loadBar.load_bar(len(df),i)
+            if verbose:
+                loadBar.load_bar(len(df),i)
             # Extract latitude and longitude values
             latitude = row[lat_col]
             longitude = row[lon_col]
