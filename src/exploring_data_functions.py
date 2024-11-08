@@ -67,8 +67,9 @@ def type_dummies(total_df):
     if "vesselType" not in total_df.columns:
         return None
     return_values = pd.get_dummies(total_df["vesselType"], dummy_na=True, prefix='value')
-    return_values = return_values["vesselType_dummies"]
-    return_values.name = "vesselType_dummies"
+    #return_values = return_values["vesselType_dummies"]
+    return_values.columns = [f"vesselType_{col}" for col in return_values.columns]
+    #return_values.name = "vesselType_dummies"
     return return_values
 
 def minutes_to_etaParsed(total_df):
