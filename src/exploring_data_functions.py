@@ -7,7 +7,7 @@ def categorize_navstat(toy_data):
     important_values = {0: "OMW_E", 1: "Anchor", 5: "Moored"}
 
     # Create a new column with categories
-    toy_data['navstat_cat'] = toy_data['navstat'].apply(lambda x: important_values.get(x, "Other"))
+    toy_data = toy_data['navstat'].apply(lambda x: important_values.get(x, "Other"))
     toy_data.name = "navstat_cat"
     return toy_data
 
