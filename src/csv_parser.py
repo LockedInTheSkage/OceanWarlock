@@ -1,7 +1,4 @@
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 from datetime import datetime
 from globals import RESOURCE_FOLDER
 
@@ -56,6 +53,7 @@ class CSVParser():
 
     def retrieve_vessels(self,path):
         df_vessels = pd.read_csv(path, sep='|')
+        df_vessels = df_vessels.drop(['vesselType', "depth", "draft", "maxWidth", "rampCapacity", "yearBuilt"], axis = 1)
         return df_vessels
 
     def retrieve_tests(self,path):
@@ -67,14 +65,14 @@ class CSVParser():
         df_ais=self.retrieve_ais(self.folderpath+'/ais_train.csv')
         df_ports=self.retrieve_ports(self.folderpath+'/ports.csv')
         # df_schedules=self.retrieve_schedules(self.folderpath+'/schedules_to_may_2024.csv')
-        #df_vessels=self.retrieve_vessels(self.folderpath+'/vessels.csv')
+        df_vessels=self.retrieve_vessels(self.folderpath+'/vessels.csv')
         
 
         result = df_ais
         result = pd.merge(df_ais, df_ports, on='portId')
-        #result = pd.merge(result, df_vessels, on='vesselId')
-        # result = pd.merge(result, df_schedules, on='portId')
-        # result = result.drop(['portId'], axis = 1)
+        result = pd.merge(result, df_vessels, on='vesselId')
+        # result = pd.merge(result, df_schedules, on=['vesselId', 'portId'])
+        #result = result.drop(['portId'], axis = 1)
         
 
         return result

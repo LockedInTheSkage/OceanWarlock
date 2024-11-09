@@ -15,12 +15,11 @@ class FeatureEngineer:
         *args: Additional positional arguments to pass to the function.
         **kwargs: Additional keyword arguments to pass to the function.
         """
-        new_feature = func(self.df, *args, **kwargs)
-        if new_feature is not None:
-            if isinstance(new_feature, pd.DataFrame):  # Handle DataFrame case
-                self.df = pd.concat([self.df, new_feature], axis=1)
-            else:
-                self.df[new_feature.name] = new_feature
+        new_df = func(self.df, *args, **kwargs)
+        if new_df is None:
+            return
+        if len(new_df) == len(self.df):
+            self.df=new_df
 
     def get_dataframe(self):
         return self.df
@@ -33,4 +32,5 @@ class FeatureEngineer:
         features (list): A list of functions that take a dataframe and return a series.
         """
         for func in features:
+            print(f"Applying {func.__name__}")
             self.add_feature(func)
