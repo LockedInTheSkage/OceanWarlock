@@ -17,7 +17,10 @@ class FeatureEngineer:
         """
         new_feature = func(self.df, *args, **kwargs)
         if new_feature is not None:
-            self.df[new_feature.name] = new_feature
+            if isinstance(new_feature, pd.DataFrame):  # Handle DataFrame case
+                self.df = pd.concat([self.df, new_feature], axis=1)
+            else:
+                self.df[new_feature.name] = new_feature
 
     def get_dataframe(self):
         return self.df
