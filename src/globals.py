@@ -1,4 +1,4 @@
-RESOURCE_FOLDER="../../resources"
+RESOURCE_FOLDER="../../Project materials(1)"
 MARKOV_SIZE=2
 STEPSIZES = [1] #3, 6, 18, 36, 72, 144, 216, 288, 360]
 OUTPUT_WINDOW = 1
